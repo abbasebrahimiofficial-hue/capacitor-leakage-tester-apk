@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>محاسبه‌گر جریان نشتی خازن</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --surface: #131c31;
+    --surface-2: #1b2742;
+    --border: #2a3b61;
+    --text: #eef4ff;
+    --muted: #9eb0d1;
+    --primary: #38bdf8;
+    --primary-dark: #0284c7;
+    --accent: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    padding: 14px 14px 36px;
+    font-family: 'Segoe UI', Tahoma, Roboto, sans-serif;
+    background: radial-gradient(circle at top, #13213c 0%, var(--bg) 65%);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.65;
+  }
+  .app-shell { max-width: 680px; margin: 0 auto; }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: linear-gradient(135deg, #162441 0%, #0f172a 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+  }
+  .header-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(56,189,248,0.45);
+    box-shadow: 0 0 18px rgba(56,189,248,0.28);
+    background: #0d1628;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .header-title h1 { margin: 0; font-size: 1.12rem; color: #f8fafc; font-weight: 700; }
+  .header-title p { margin: 3px 0 0; font-size: 0.78rem; color: var(--muted); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  .card-title {
+    margin: 0 0 12px;
+    font-size: 0.98rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+  @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: #fff;
+    font-size: 0.98rem;
+    direction: ltr;
+    text-align: left;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.2);
+  }
+  .field .hint { font-size: 0.72rem; color: #7c93ba; margin-top: 3px; }
+  .actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
+  button {
+    flex: 1;
+    min-width: 100px;
+    padding: 11px 14px;
+    border: none;
+    border-radius: 11px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.2s;
+  }
+  button:active { transform: scale(0.98); }
+  .btn-primary {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(14,165,233,0.3);
+  }
+  .btn-warn { background: #d97706; color: #fff; }
+  .btn-ghost {
+    background: var(--surface-2);
+    color: var(--primary);
+    border: 1px solid var(--border);
+  }
+  .error-box {
+    display: none;
+    background: rgba(239,68,68,0.14);
+    border: 1px solid rgba(239,68,68,0.5);
+    color: #fecaca;
+    border-radius: 12px;
+    padding: 11px 14px;
+    margin-bottom: 14px;
+    font-size: 0.88rem;
+  }
+  #resultSection { display: none; }
+  .status-banner {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid transparent;
+  }
+  .status-good { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.5); }
+  .status-bad { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+  .status-warn { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.5); }
+  .status-text { font-size: 1.08rem; font-weight: 800; }
+  .status-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 460px) { .kpi-row { grid-template-columns: 1fr; } }
+  .kpi {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .kpi-label { font-size: 0.75rem; color: var(--muted); }
+  .kpi-val {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 4px;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  .ratio-wrap { margin-bottom: 14px; }
+  .ratio-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .ratio-bar {
+    height: 10px;
+    background: #0f172a;
+    border-radius: 99px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .ratio-fill { height: 100%; width: 0%; transition: width 0.35s ease; border-radius: 99px; }
+  .step {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .step h4 { margin: 0 0 8px; font-size: 0.9rem; color: #7dd3fc; }
+  .formula {
+    background: #0e1729;
+    border: 1px solid #233457;
+    border-radius: 9px;
+    padding: 9px 12px;
+    direction: ltr;
+    text-align: center;
+    font-family: 'Cambria Math', 'Times New Roman', serif;
+    font-size: 0.98rem;
+    color: #e2e8f0;
+    margin-bottom: 8px;
+    overflow-x: auto;
+  }
+  .frac {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    text-align: center;
+    margin: 0 4px;
+  }
+  .frac .num { border-bottom: 1px solid #cbd5e1; padding: 0 4px 2px; }
+  .frac .den { padding: 2px 4px 0; }
+  .step-val { font-size: 0.88rem; color: #e2e8f0; margin: 0; }
+  .step-val b { color: #38bdf8; direction: ltr; display: inline-block; }
+  .collapsible-container {
+    margin: 12px 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--surface-2);
+  }
+  .collapsible-header {
+    background: #1e2d4d;
+    color: #e2e8f0;
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 700;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle-icon { color: var(--primary); font-size: 1.15rem; font-weight: 800; }
+  .collapsible-content {
+    display: none;
+    padding: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: #0d1526;
+  }
+  .collapsible-content pre {
+    margin: 0;
+    font-family: Consolas, monospace;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    direction: ltr;
+    text-align: left;
+    white-space: pre;
+  }
+  .chart-wrap {
+    position: relative;
+    background: #0d1526;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 8px 6px;
+    margin-top: 10px;
+  }
+  canvas#chartVt { width: 100%; height: 270px; display: block; touch-action: none; }
+  .chart-readout {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 6px;
+    direction: ltr;
+  }
+  .footer-note {
+    text-align: center;
+    font-size: 0.74rem;
+    color: #64748b;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="header">
+    <div class="header-logo">
+      <img id="appLogo" alt="لوگو" />
+    </div>
+    <div class="header-title">
+      <h1>محاسبه‌گر جریان نشتی واقعی خازن</h1>
+      <p>تحلیل سلامت خازن الکترولیتی و رسم منحنی دشارژ V(t)</p>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+
+  <div class="card">
+    <div class="card-title">⚡ پارامترهای اندازه‌گیری</div>
+    <form id="calcForm" novalidate>
+      <div class="grid">
+        <div class="field">
+          <label for="inpC">ظرفیت خازن C (µF)</label>
+          <input id="inpC" type="number" step="any" inputmode="decimal" placeholder="مثلاً 1000" required />
+        </div>
+        <div class="field">
+          <label for="inpV">ولتاژ نامی V (V)</label>
+          <input id="inpV" type="number" step="any" inputmode="decimal" placeholder="مثلاً 50" required />
+        </div>
+        <div class="field">
+          <label for="inpV1">ولتاژ اولیه V₁ (V)</label>
+          <input id="inpV1" type="number" step="any" inputmode="decimal" placeholder="مثلاً 50" required />
+        </div>
+        <div class="field">
+          <label for="inpV2">ولتاژ نهایی V₂ (V)</label>
+          <input id="inpV2" type="number" step="any" inputmode="decimal" placeholder="مثلاً 48.5" required />
+        </div>
+        <div class="field">
+          <label for="inpT2">زمان اندازه‌گیری T₂ (s)</label>
+          <input id="inpT2" type="number" step="any" inputmode="decimal" placeholder="مثلاً 60" required />
+        </div>
+        <div class="field">
+          <label for="inpTime">زمان نمودار Time (s)</label>
+          <input id="inpTime" type="number" step="any" inputmode="decimal" placeholder="اختیاری (پیش‌فرض T₂)" />
+          <div class="hint">در صورت خالی بودن برابر T₂ در نظر گرفته می‌شود</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary">محاسبه</button>
+        <button type="button" id="sampleBtn" class="btn-ghost">نمونه آزمایشی</button>
+        <button type="button" id="clearFormBtn" class="btn-warn">پاک کردن</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="resultSection">
+    <div id="statusBanner" class="status-banner">
+      <div>
+        <div id="statusTitle" class="status-text"></div>
+        <div id="statusSub" class="status-sub"></div>
+      </div>
+      <div id="statusIcon" style="font-size:1.8rem;"></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">جریان نشتی مجاز</div>
+        <div id="kpiMax" class="kpi-val">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">جریان نشتی واقعی</div>
+        <div id="kpiReal" class="kpi-val">-</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">مقاومت نشتی R</div>
+        <div id="kpiR" class="kpi-val">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ratio-wrap">
+        <div class="ratio-meta">
+          <span>نسبت جریان واقعی به مجاز (I<sub>Real</sub> / I<sub>Max</sub>)</span>
+          <span id="ratioPct" style="direction:ltr;font-weight:700;">0%</span>
+        </div>
+        <div class="ratio-bar"><div id="ratioFill" class="ratio-fill"></div></div>
+      </div>
+
+      <div class="step">
+        <h4>🔹 مرحله ۱ — جریان نشتی مجاز</h4>
+        <div class="formula">I<sub>Leakage(max)</sub> = 0.01 × C (µF) × V (V)  [µA]</div>
+        <p class="step-val">مقدار محاسبه‌شده: <b id="step1Val"></b></p>
+      </div>
+
+      <div class="step">
+        <h4>🔹 مرحله ۲ — مقاومت نشتی و ثابت زمانی</h4>
+        <div class="formula">
+          R<sub>leakage</sub> =
+          <span class="frac"><span class="num">T<sub>2</sub></span><span class="den">C<sub>F</sub> × ln(V<sub>1</sub> / V<sub>2</sub>)</span></span>
+        </div>
+        <p class="step-val">R<sub>leakage</sub> = <b id="step2Val"></b> (<span id="step2Pretty" style="direction:ltr;display:inline-block;"></span>) &nbsp;|&nbsp; τ = <b id="step2Tau"></b></p>
+      </div>
+
+      <div class="step">
+        <h4>🔹 مرحله ۳ — جریان نشتی واقعی</h4>
+        <div class="formula">
+          I<sub>LeakReal</sub> =
+          <span class="frac"><span class="num">V</span><span class="den">R<sub>leakage</sub></span></span>
+        </div>
+        <p class="step-val">I<sub>LeakReal</sub> = <b id="step3Val"></b></p>
+      </div>
+
+      <div class="step">
+        <h4>🔹 مرحله ۴ — تصمیم نهایی</h4>
+        <div class="formula" id="step4Formula"></div>
+        <p class="step-val" id="step4Desc"></p>
+      </div>
+
+      <div class="step">
+        <h4>🔹 مرحله ۵ — ولتاژ متناظر زمان V(t)</h4>
+        <div class="collapsible-container">
+          <div class="collapsible-header" id="collapseHeader">
+            <span class="toggle-icon" id="toggleIcon">＋</span>
+            <span>نمایش / پنهان کردن داده‌های محاسبه‌شده (۲۰۱ نقطه)</span>
+          </div>
+          <div class="collapsible-content" id="collapseContent">
+            <pre id="vtTable"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-top:14px;">📈 نمودار دشارژ خازن V(t)</div>
+      <div class="chart-wrap">
+        <canvas id="chartVt"></canvas>
+        <div id="chartReadout" class="chart-readout">برای مشاهده مقدار دقیق روی نمودار لمس یا حرکت دهید</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">نسخه مستقل آفلاین اندروید — مهندسی برق و الکترونیک صنعتی</div>
+</div>
+
+<script>
+const LOGO_DATA_URI = "data:image/jpeg;base64,__ICON_B64__";
+document.getElementById("appLogo").src = LOGO_DATA_URI;
+
+let lastPoints = [];
+let lastT2 = 0;
+let lastV2 = 0;
+let lastPlotTime = 0;
+
+function formatCurrent(current) {
+  if (current < 1e-6) return (current * 1e9).toFixed(3) + " nA";
+  if (current < 1e-3) return (current * 1e6).toFixed(3) + " µA";
+  if (current < 1) return (current * 1e3).toFixed(3) + " mA";
+  return current.toFixed(3) + " A";
+}
+
+function formatResistance(r) {
+  if (r >= 1e9) return (r / 1e9).toFixed(3) + " GΩ";
+  if (r >= 1e6) return (r / 1e6).toFixed(3) + " MΩ";
+  if (r >= 1e3) return (r / 1e3).toFixed(3) + " kΩ";
+  return r.toFixed(3) + " Ω";
+}
+
+function formatTime(sec) {
+  if (sec >= 3600) return (sec / 3600).toFixed(2) + " h";
+  if (sec >= 60) return (sec / 60).toFixed(2) + " min";
+  return sec.toFixed(2) + " s";
+}
+
+function showError(msg) {
+  const box = document.getElementById("errorBox");
+  box.textContent = msg;
+  box.style.display = "block";
+  document.getElementById("resultSection").style.display = "none";
+}
+
+function hideError() {
+  document.getElementById("errorBox").style.display = "none";
+}
+
+function calculate(e) {
+  if (e) e.preventDefault();
+  hideError();
+
+  const C = parseFloat(document.getElementById("inpC").value);
+  const V = parseFloat(document.getElementById("inpV").value);
+  const V1 = parseFloat(document.getElementById("inpV1").value);
+  const V2 = parseFloat(document.getElementById("inpV2").value);
+  const T2 = parseFloat(document.getElementById("inpT2").value);
+  const TimeRaw = document.getElementById("inpTime").value.trim();
+  const Time = TimeRaw === "" ? T2 : parseFloat(TimeRaw);
+
+  if ([C, V, V1, V2, T2].some(x => isNaN(x))) {
+    showError("لطفاً تمام فیلدهای الزامی (C, V, V₁, V₂, T₂) را با اعداد معتبر وارد کنید.");
+    return;
+  }
+  if (C <= 0 || V <= 0 || V1 <= 0 || V2 <= 0 || T2 <= 0 || isNaN(Time) || Time <= 0) {
+    showError("تمامی مقادیر ورودی باید بزرگ‌تر از صفر باشند.");
+    return;
+  }
+  if (V1 <= V2) {
+    showError("ولتاژ اولیه (V₁) باید بزرگ‌تر از ولتاژ نهایی (V₂) باشد تا افت ولتاژ و مقاومت نشتی قابل محاسبه باشد.");
+    return;
+  }
+
+  const C_F = C * 1e-6;
+  const ILeakMax = 0.01 * C * V * 1e-6;
+  const RLeakage = T2 / (C_F * Math.log(V1 / V2));
+  const ILeakReal = V / RLeakage;
+  const tau = RLeakage * C_F;
+
+  let statusClass, statusText, statusEmoji, statusSub, step4Formula;
+  const eps = 1e-12;
+  if (ILeakMax - ILeakReal > eps) {
+    statusClass = "status-good";
+    statusText = "خازن سالم و قابل استفاده ✅";
+    statusEmoji = "✅";
+    statusSub = "جریان نشتی واقعی کمتر از حد مجاز استاندارد است.";
+    step4Formula = "I_Leakage(max) > I_LeakReal  ⇒  Good ✅";
+  } else if (ILeakReal - ILeakMax > eps) {
+    statusClass = "status-bad";
+    statusText = "خازن معیوب ❌";
+    statusEmoji = "❌";
+    statusSub = "جریان نشتی واقعی از حد مجاز فراتر رفته است؛ تعویض خازن توصیه می‌شود.";
+    step4Formula = "I_Leakage(max) < I_LeakReal  ⇒  Faulty ❌";
+  } else {
+    statusClass = "status-warn";
+    statusText = "شرایط مرزی ⚠️ (استفاده با احتیاط)";
+    statusEmoji = "⚠️";
+    statusSub = "جریان نشتی واقعی دقیقاً در مرز مجاز قرار دارد.";
+    step4Formula = "I_Leakage(max) = I_LeakReal  ⇒  Marginal ⚠️";
+  }
+
+  const strMax = formatCurrent(ILeakMax);
+  const strReal = formatCurrent(ILeakReal);
+  const strR = formatResistance(RLeakage);
+
+  const banner = document.getElementById("statusBanner");
+  banner.className = "status-banner " + statusClass;
+  document.getElementById("statusTitle").textContent = statusText;
+  document.getElementById("statusSub").textContent = statusSub;
+  document.getElementById("statusIcon").textContent = statusEmoji;
+
+  document.getElementById("kpiMax").textContent = strMax;
+  document.getElementById("kpiReal").textContent = strReal;
+  document.getElementById("kpiR").textContent = strR;
+
+  const ratio = (ILeakReal / ILeakMax) * 100;
+  document.getElementById("ratioPct").textContent = ratio.toFixed(1) + "%";
+  const fill = document.getElementById("ratioFill");
+  fill.style.width = Math.min(ratio, 100) + "%";
+  fill.style.background = ratio < 85 ? "#10b981" : (ratio <= 100 ? "#f59e0b" : "#ef4444");
+
+  document.getElementById("step1Val").textContent = strMax;
+  document.getElementById("step2Val").textContent = RLeakage.toFixed(3) + " Ω";
+  document.getElementById("step2Pretty").textContent = strR;
+  document.getElementById("step2Tau").textContent = formatTime(tau);
+  document.getElementById("step3Val").textContent = strReal;
+  document.getElementById("step4Formula").textContent = step4Formula;
+  document.getElementById("step4Desc").innerHTML =
+    statusText + "<br>جریان نشتی مجاز: <b>" + strMax + "</b> &nbsp;|&nbsp; جریان نشتی واقعی: <b>" + strReal + "</b>";
+
+  const steps = 200;
+  lastPoints = [];
+  let tableText = "";
+  for (let i = 0; i <= steps; i++) {
+    const t = (i * Time) / steps;
+    const Vt = V1 * Math.exp(-t / tau);
+    lastPoints.push({ t: t, Vt: Vt });
+    tableText += "t = " + t.toFixed(2) + " s  →  V(t) = " + Vt.toFixed(4) + " V\n";
+  }
+  document.getElementById("vtTable").textContent = tableText;
+  lastT2 = T2;
+  lastV2 = V2;
+  lastPlotTime = Time;
+
+  document.getElementById("resultSection").style.display = "block";
+  drawChart();
+  document.getElementById("resultSection").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function drawChart(hoverIdx) {
+  const canvas = document.getElementById("chartVt");
+  if (!canvas || lastPoints.length === 0) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const W = Math.max(rect.width, 280);
+  const H = 270;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, W, H);
+  const pad = { top: 22, right: 18, bottom: 42, left: 52 };
+  const pw = W - pad.left - pad.right;
+  const ph = H - pad.top - pad.bottom;
+
+  const maxX = lastPlotTime;
+  const maxY = lastPoints[0].Vt * 1.06;
+
+  const xOf = t => pad.left + (t / maxX) * pw;
+  const yOf = v => pad.top + ph - (v / maxY) * ph;
+
+  ctx.strokeStyle = "rgba(148,163,184,0.16)";
+  ctx.lineWidth = 1;
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#94a3b8";
+
+  const yTicks = 5;
+  for (let i = 0; i <= yTicks; i++) {
+    const v = (maxY * i) / yTicks;
+    const y = yOf(v);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + pw, y); ctx.stroke();
+    ctx.textAlign = "right";
+    ctx.fillText(v.toFixed(1), pad.left - 7, y + 4);
+  }
+  const xTicks = 5;
+  for (let i = 0; i <= xTicks; i++) {
+    const t = (maxX * i) / xTicks;
+    const x = xOf(t);
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, pad.top + ph); ctx.stroke();
+    ctx.textAlign = "center";
+    ctx.fillText(t.toFixed(1), x, pad.top + ph + 16);
+  }
+
+  ctx.fillStyle = "#cbd5e1";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("زمان (ثانیه)", pad.left + pw / 2, H - 6);
+  ctx.save();
+  ctx.translate(14, pad.top + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("ولتاژ (ولت)", 0, 0);
+  ctx.restore();
+
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ph);
+  grad.addColorStop(0, "rgba(56,189,248,0.32)");
+  grad.addColorStop(1, "rgba(56,189,248,0.01)");
+  ctx.beginPath();
+  ctx.moveTo(xOf(lastPoints[0].t), yOf(0));
+  for (const p of lastPoints) ctx.lineTo(xOf(p.t), yOf(p.Vt));
+  ctx.lineTo(xOf(lastPoints[lastPoints.length - 1].t), yOf(0));
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  lastPoints.forEach((p, i) => {
+    const x = xOf(p.t), y = yOf(p.Vt);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = "#38bdf8";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  if (lastT2 <= maxX) {
+    const mx = xOf(lastT2), my = yOf(lastV2);
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = "rgba(245,158,11,0.7)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(mx, pad.top); ctx.lineTo(mx, pad.top + ph); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#f59e0b";
+    ctx.beginPath(); ctx.arc(mx, my, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fde68a";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = mx > pad.left + pw * 0.72 ? "right" : "left";
+    ctx.fillText("T₂ (" + lastT2 + "s, " + lastV2 + "V)", mx + (mx > pad.left + pw * 0.72 ? -8 : 8), my - 8);
+  }
+
+  if (typeof hoverIdx === "number" && lastPoints[hoverIdx]) {
+    const p = lastPoints[hoverIdx];
+    const hx = xOf(p.t), hy = yOf(p.Vt);
+    ctx.strokeStyle = "rgba(16,185,129,0.7)";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(hx, pad.top); ctx.lineTo(hx, pad.top + ph); ctx.stroke();
+    ctx.fillStyle = "#10b981";
+    ctx.beginPath(); ctx.arc(hx, hy, 5.5, 0, Math.PI * 2); ctx.fill();
+    document.getElementById("chartReadout").textContent =
+      "t = " + p.t.toFixed(2) + " s   |   V(t) = " + p.Vt.toFixed(4) + " V";
+  }
+}
+
+function handleChartPointer(clientX) {
+  const canvas = document.getElementById("chartVt");
+  if (!canvas || lastPoints.length === 0) return;
+  const rect = canvas.getBoundingClientRect();
+  const padLeft = 52, padRight = 18;
+  const rel = (clientX - rect.left - padLeft) / (rect.width - padLeft - padRight);
+  const clamped = Math.max(0, Math.min(1, rel));
+  const idx = Math.round(clamped * (lastPoints.length - 1));
+  drawChart(idx);
+}
+
+const chartEl = document.getElementById("chartVt");
+chartEl.addEventListener("pointermove", e => handleChartPointer(e.clientX));
+chartEl.addEventListener("pointerdown", e => handleChartPointer(e.clientX));
+window.addEventListener("resize", () => drawChart());
+
+document.getElementById("calcForm").addEventListener("submit", calculate);
+
+document.getElementById("sampleBtn").addEventListener("click", () => {
+  document.getElementById("inpC").value = "1000";
+  document.getElementById("inpV").value = "50";
+  document.getElementById("inpV1").value = "50";
+  document.getElementById("inpV2").value = "48.5";
+  document.getElementById("inpT2").value = "60";
+  document.getElementById("inpTime").value = "120";
+  calculate();
+});
+
+document.getElementById("clearFormBtn").addEventListener("click", () => {
+  document.querySelectorAll("#calcForm input").forEach(inp => inp.value = "");
+  hideError();
+  document.getElementById("resultSection").style.display = "none";
+  document.getElementById("collapseContent").style.display = "none";
+  document.getElementById("toggleIcon").textContent = "＋";
+  lastPoints = [];
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+document.getElementById("collapseHeader").addEventListener("click", () => {
+  const content = document.getElementById("collapseContent");
+  const icon = document.getElementById("toggleIcon");
+  if (content.style.display === "block") {
+    content.style.display = "none";
+    icon.textContent = "＋";
+  } else {
+    content.style.display = "block";
+    icon.textContent = "－";
+  }
+});
+</script>
+</body>
+</html>
